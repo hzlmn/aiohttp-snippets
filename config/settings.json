@@ -1,0 +1,7 @@
+{
+    "twilio": {
+        "account_id": "ACc5816b2354d269575334ef01bfaec5d5",
+        "auth_token": "42b35d093ab22030baedbebb564e5d2e"
+    },
+    "google": {}
+}
