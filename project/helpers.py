@@ -1,4 +1,5 @@
 import asyncio
+import importlib
 import json
 from functools import partial, wraps
 from pathlib import Path
@@ -18,8 +19,8 @@ def run_in_executor(loop_="loop", executor_="executor"):
     return factory
 
 
-def load_config(config_path, decoder=json.loads):
+def load_config(config_path):
     with Path(config_path).open() as fd:
-        config = decoder(fd.read())
+        config = json.loads(fd.read())
 
     return config

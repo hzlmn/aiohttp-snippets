@@ -11,6 +11,7 @@ from aiohttp import web
 from .handlers import UsersHandler
 from .helpers import load_config, run_in_executor
 from .middlewares import validation_middleware
+from .routes import setup_routes
 from .twilio import TwilioGateway
 
 logger = logging.getLogger(__name__)
@@ -28,19 +29,15 @@ class AiohttpServer:
 
         self.executor = ThreadPoolExecutor(max_workers=10)
 
-        self.validation_middleware = [validation_middleware]
-        self.app = web.Application(
-            loop=self.loop, middlewares=[] + self.validation_middleware
-        )
+        self.middlewares = [validation_middleware]
+
+        self.app = web.Application(loop=self.loop, middlewares=self.middlewares)
 
         self.elastic = aioelasticsearch.Elasticsearch()
         self.twilio_gateway = TwilioGateway(loop=self.loop, **self.config["twilio"])
         self.handler = UsersHandler()
 
-        self.app.router.add_route("GET", "/api/v1/users/search", self.handler.search)
-        self.app.router.add_route(
-            "POST", "/api/v1/users/send_sms", self.handler.send_sms
-        )
+        setup_routes(self.app, self.handler)
 
         inj = self.setup_injections()
         inj.inject(self.handler)
