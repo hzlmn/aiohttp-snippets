@@ -11,6 +11,7 @@ from aiohttp import web
 from .handlers import UsersHandler
 from .helpers import load_config, run_in_executor
 from .middlewares import validation_middleware
+from .router import Router
 from .routes import setup_routes
 from .twilio import TwilioGateway
 
@@ -25,22 +26,27 @@ class AiohttpServer:
         self.loop = loop
 
     def setup(self):
-        self.config = load_config("config/settings.json")
+        self.config = load_config("configs/auth.json")
 
         self.executor = ThreadPoolExecutor(max_workers=10)
 
         self.middlewares = [validation_middleware]
 
-        self.app = web.Application(loop=self.loop, middlewares=self.middlewares)
+        self.app = web.Application(
+            loop=self.loop, middlewares=self.middlewares, debug=True
+        )
 
-        self.elastic = aioelasticsearch.Elasticsearch()
+        self.elastic = aioelasticsearch.Elasticsearch(hosts=["elastic"])
         self.twilio_gateway = TwilioGateway(loop=self.loop, **self.config["twilio"])
-        self.handler = UsersHandler()
 
-        setup_routes(self.app, self.handler)
+        self.router = Router()
+        self.router.setup_sms_handler()
+        self.router.setup_users_handler()
+
+        setup_routes(self.app, self.router)
 
         inj = self.setup_injections()
-        inj.inject(self.handler)
+        inj.inject(self.router)
 
     def setup_injections(self):
         inj = injections.Container()
@@ -55,9 +61,13 @@ class AiohttpServer:
         return inj
 
     def start(self):
+        import aioreloader
+
+        aioreloader.start()
         web.run_app(self.app, port=9002)
 
     async def stop(self):
         self.loop.close()
         self.executor.shutdown()
+
         await self.elastic.close()

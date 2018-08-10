@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  elastic:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.2
+
+  api:
+    build: './'
+    volumes:
+      - ./project:/service/project
+      - ./config:/service/config
+      - ./service_logs:/data/service_logs
+
+    stdin_open: true
+    tty: true
+
+    ports:
+      - 9002:9002
+
+    links:
+      - elastic:elastic

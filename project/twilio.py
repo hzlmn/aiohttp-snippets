@@ -20,7 +20,7 @@ class TwilioGateway:
     def _send_sms(self, message, callback=None):
         self.client.messages.create(
             body=message,
-            from_="+12248367880",
+            from_="+13392007215",
             status_callback=callback,
             to="+380974219029",
         )

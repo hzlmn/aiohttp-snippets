@@ -9,7 +9,6 @@ from .twilio import TwilioGateway
 @injections.has
 class UsersHandler:
     elastic = injections.depends(aioelasticsearch.Elasticsearch)
-    twilio_gateway = injections.depends(TwilioGateway)
 
     index = "users"
     doc_type = "document"
@@ -32,6 +31,11 @@ class UsersHandler:
         users = [doc["_source"] for doc in resp["hits"]["hits"]]
 
         return web.json_response({"users": UsersOutputTrafaret(users)})
+
+
+@injections.has
+class SmsHandler:
+    twilio_gateway = injections.depends(TwilioGateway)
 
     async def send_sms(self, request):
         await self.twilio_gateway.send_sms("test message")
